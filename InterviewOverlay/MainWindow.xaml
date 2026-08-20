@@ -36,6 +36,7 @@
         <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,12">
             <Button Content="New Notes" Click="NewNotes_Click"/>
             <Button Content="Open Notes" Click="OpenNotes_Click" Margin="6,0,0,0"/>
+            <Button Content="Delete Profile" Click="DeleteProfile_Click" Margin="6,0,0,0"/>
             <Button Content="Attach to Window" Click="Attach_Click" Margin="6,0,0,0"/>
             <Button Content="Detach" Click="Detach_Click" Margin="6,0,0,0"/>
             <Button Content="Show / Hide Overlay" Click="ToggleOverlay_Click" Margin="6,0,0,0"/>
@@ -57,7 +58,13 @@
                 <TextBlock DockPanel.Dock="Top" Text="INTERVIEW PROFILES" Foreground="#888" FontSize="11"
                            FontWeight="SemiBold" Margin="2,0,0,6"/>
                 <ListBox Name="ProfileList" Background="#1E1F24" BorderThickness="0"
-                          SelectionChanged="ProfileList_SelectionChanged"/>
+                          SelectionChanged="ProfileList_SelectionChanged">
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Delete Profile" Click="DeleteProfile_Click"/>
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
             </DockPanel>
 
             <!-- Editor + status -->
