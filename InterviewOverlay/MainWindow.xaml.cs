@@ -1,110 +1,237 @@
-<Window x:Class="InterviewOverlay.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Interview Overlay" Height="620" Width="900"
-        Background="#17181C"
-        Closing="Window_Closing">
-    <Window.Resources>
-        <Style TargetType="Button">
-            <Setter Property="Padding" Value="12,7"/>
-            <Setter Property="Background" Value="#2A2B32"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="12.5"/>
-        </Style>
-        <Style TargetType="ListBoxItem">
-            <Setter Property="Padding" Value="8,7"/>
-            <Setter Property="Foreground" Value="#E8E8E8"/>
-        </Style>
-    </Window.Resources>
+using System;
+using System.Linq;
+using System.Windows;
+using System.Windows.Threading;
+using InterviewOverlay.Models;
+using Microsoft.Win32;
 
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+namespace InterviewOverlay
+{
+    public partial class MainWindow : Window
+    {
+        private InterviewProfile? _current;
+        private DispatcherTimer? _autoSaveTimer;
+        private bool _suppressChangeEvents;
 
-        <!-- Header -->
-        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="Interview Overlay" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-            <TextBlock Text="  floating interview notes" Foreground="#888" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,3"/>
-        </StackPanel>
+        public MainWindow()
+        {
+            InitializeComponent();
+            LoadProfilesIntoList();
 
-        <!-- Toolbar -->
-        <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="0,0,0,12">
-            <Button Content="New Notes" Click="NewNotes_Click"/>
-            <Button Content="Open Notes" Click="OpenNotes_Click" Margin="6,0,0,0"/>
-            <Button Content="Delete Profile" Click="DeleteProfile_Click" Margin="6,0,0,0"/>
-            <Button Content="Attach to Window" Click="Attach_Click" Margin="6,0,0,0"/>
-            <Button Content="Detach" Click="Detach_Click" Margin="6,0,0,0"/>
-            <Button Content="Show / Hide Overlay" Click="ToggleOverlay_Click" Margin="6,0,0,0"/>
-            <Button Content="Settings" Click="Settings_Click" Margin="6,0,0,0"/>
-            <Border Width="1" Background="#333" Margin="10,4"/>
-            <Button Content="Export" Click="Export_Click" Margin="0,0,0,0"/>
-            <Button Content="Import" Click="Import_Click" Margin="6,0,0,0"/>
-        </StackPanel>
+            var last = App.Notes.GetLastOpened();
+            if (last != null)
+            {
+                ProfileList.SelectedItem = App.Notes.State.Profiles.FirstOrDefault(p => p.Id == last.Id);
+            }
+            else if (ProfileList.Items.Count > 0)
+            {
+                ProfileList.SelectedIndex = 0;
+            }
 
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="230"/>
-                <ColumnDefinition Width="12"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+            StartAutoSave();
+            RefreshAttachedLabel();
+        }
 
-            <!-- Profiles list -->
-            <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="INTERVIEW PROFILES" Foreground="#888" FontSize="11"
-                           FontWeight="SemiBold" Margin="2,0,0,6"/>
-                <ListBox Name="ProfileList" Background="#1E1F24" BorderThickness="0"
-                          SelectionChanged="ProfileList_SelectionChanged">
-                    <ListBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Delete Profile" Click="DeleteProfile_Click"/>
-                        </ContextMenu>
-                    </ListBox.ContextMenu>
-                </ListBox>
-            </DockPanel>
+        private void LoadProfilesIntoList()
+        {
+            ProfileList.ItemsSource = null;
+            ProfileList.ItemsSource = App.Notes.State.Profiles;
+            ProfileList.DisplayMemberPath = "";
+        }
 
-            <!-- Editor + status -->
-            <DockPanel Grid.Column="2">
-                <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBox Name="InterviewNameBox" Background="Transparent" Foreground="White"
-                                 BorderThickness="0" FontSize="16" FontWeight="SemiBold"
-                                 TextChanged="MetaField_TextChanged"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBlock Text="Company:" Foreground="#888" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBox Name="CompanyBox" Width="160" Margin="4,0,10,0" Background="#1E1F24"
-                                     Foreground="White" BorderThickness="0" Padding="4,2"
-                                     TextChanged="MetaField_TextChanged"/>
-                            <TextBlock Text="Position:" Foreground="#888" FontSize="11" VerticalAlignment="Center"/>
-                            <TextBox Name="PositionBox" Width="160" Margin="4,0,0,0" Background="#1E1F24"
-                                     Foreground="White" BorderThickness="0" Padding="4,2"
-                                     TextChanged="MetaField_TextChanged"/>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Top">
-                        <TextBlock Text="Attached to:" Foreground="#888" FontSize="11" HorizontalAlignment="Right"/>
-                        <TextBlock Name="AttachedLabel" Text="None" Foreground="White" FontSize="12"
-                                   HorizontalAlignment="Right" TextWrapping="Wrap" MaxWidth="240"/>
-                    </StackPanel>
-                </Grid>
+        private void StartAutoSave()
+        {
+            var seconds = Math.Max(2, App.Settings.Current.AutoSaveIntervalSeconds);
+            _autoSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+            _autoSaveTimer.Tick += (_, _) => SaveCurrentProfile();
+            _autoSaveTimer.Start();
+        }
 
-                <TextBox Name="NotesEditor"
-                         AcceptsReturn="True" AcceptsTab="True"
-                         TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto"
-                         Background="#1E1F24" Foreground="#F0F0F0"
-                         BorderThickness="0" Padding="12" FontSize="14"
-                         FontFamily="Consolas"
-                         TextChanged="NotesEditor_TextChanged"/>
-            </DockPanel>
-        </Grid>
-    </Grid>
-</Window>
+        // ---------- Profile selection / editing ----------
+
+        private void ProfileList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            SaveCurrentProfile();
+
+            if (ProfileList.SelectedItem is InterviewProfile profile)
+            {
+                _current = profile;
+                _suppressChangeEvents = true;
+                InterviewNameBox.Text = profile.InterviewName;
+                CompanyBox.Text = profile.Company;
+                PositionBox.Text = profile.Position;
+                NotesEditor.Text = profile.NotesPlainText;
+                _suppressChangeEvents = false;
+
+                App.Notes.Touch(profile);
+                App.Overlay?.LoadProfile(profile);
+            }
+        }
+
+        private void MetaField_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (_suppressChangeEvents || _current == null) return;
+            _current.InterviewName = string.IsNullOrWhiteSpace(InterviewNameBox.Text) ? "Untitled Interview" : InterviewNameBox.Text;
+            _current.Company = CompanyBox.Text;
+            _current.Position = PositionBox.Text;
+            RefreshListDisplay();
+        }
+
+        private void NotesEditor_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (_suppressChangeEvents || _current == null) return;
+            _current.NotesPlainText = NotesEditor.Text;
+            App.Overlay?.RefreshNotesText(NotesEditor.Text);
+        }
+
+        private void RefreshListDisplay()
+        {
+            var idx = ProfileList.SelectedIndex;
+            ProfileList.Items.Refresh();
+            ProfileList.SelectedIndex = idx;
+        }
+
+        private void SaveCurrentProfile()
+        {
+            if (_current == null) return;
+            App.Overlay?.SaveViewStateToProfile();
+            App.Notes.Save();
+        }
+
+        // ---------- Toolbar actions ----------
+
+        private void DeleteProfile_Click(object sender, RoutedEventArgs e)
+        {
+            if (_current == null)
+            {
+                MessageBox.Show(this, "Select a profile first.", "Interview Overlay",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (App.Notes.State.Profiles.Count <= 1)
+            {
+                MessageBox.Show(this, "You need at least one profile - create a new one before deleting this.",
+                    "Interview Overlay", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show(this,
+                $"Delete \"{_current}\"? This can't be undone.",
+                "Delete Profile", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes) return;
+
+            var idToDelete = _current.Id;
+            App.Notes.DeleteProfile(idToDelete);
+            _current = null;
+
+            LoadProfilesIntoList();
+            if (ProfileList.Items.Count > 0)
+                ProfileList.SelectedIndex = 0;
+        }
+
+        private void NewNotes_Click(object sender, RoutedEventArgs e)
+        {
+            SaveCurrentProfile();
+            var profile = App.Notes.CreateProfile("New Interview");
+            LoadProfilesIntoList();
+            ProfileList.SelectedItem = profile;
+        }
+
+        private void OpenNotes_Click(object sender, RoutedEventArgs e)
+        {
+            NotesEditor.Focus();
+        }
+
+        public void OpenAttachDialog()
+        {
+            var dlg = new Views.AttachWindow { Owner = this };
+            if (dlg.ShowDialog() == true && dlg.SelectedWindow != null)
+            {
+                var position = dlg.SelectedPosition;
+                App.Overlay?.AttachTo(dlg.SelectedWindow.Handle, dlg.SelectedWindow.DisplayLabel, position);
+                if (_current != null) _current.OverlayPosition = position;
+                RefreshAttachedLabel();
+            }
+        }
+
+        private void Attach_Click(object sender, RoutedEventArgs e) => OpenAttachDialog();
+
+        private void Detach_Click(object sender, RoutedEventArgs e)
+        {
+            App.Overlay?.Detach();
+            RefreshAttachedLabel();
+        }
+
+        private void ToggleOverlay_Click(object sender, RoutedEventArgs e) => App.Overlay?.ToggleVisibility();
+
+        public void OpenSettings()
+        {
+            var dlg = new Views.SettingsWindow { Owner = this };
+            dlg.ShowDialog();
+        }
+
+        private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
+
+        private void Export_Click(object sender, RoutedEventArgs e)
+        {
+            if (_current == null) return;
+            SaveCurrentProfile();
+
+            var dlg = new SaveFileDialog
+            {
+                Filter = "JSON (*.json)|*.json|Markdown (*.md)|*.md|Text (*.txt)|*.txt",
+                FileName = _current.InterviewName
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                App.Notes.ExportProfile(_current, dlg.FileName);
+                MessageBox.Show(this, "Notes exported.", "Interview Overlay", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void Import_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Supported files (*.json;*.md;*.txt)|*.json;*.md;*.txt|All files (*.*)|*.*"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                var profile = App.Notes.ImportProfile(dlg.FileName);
+                LoadProfilesIntoList();
+                ProfileList.SelectedItem = profile;
+            }
+        }
+
+        private void RefreshAttachedLabel()
+        {
+            AttachedLabel.Text = App.Overlay?.IsAttached == true
+                ? App.Overlay.AttachedWindowLabel
+                : "None";
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            if (App.Overlay != null)
+                App.Overlay.AttachmentChanged += (_, _) => RefreshAttachedLabel();
+        }
+
+        // ---------- Close = minimize to tray (unless exiting) ----------
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            SaveCurrentProfile();
+
+            if (App.Settings.Current.MinimizeToTray && !AppIsExiting)
+            {
+                e.Cancel = true;
+                Hide();
+            }
+        }
+
+        public static bool AppIsExiting { get; set; } = false;
+    }
+}
