@@ -77,9 +77,9 @@ namespace InterviewOverlay
         private void TrayAttach_Click(object sender, RoutedEventArgs e) { Main?.Show(); Main?.OpenAttachDialog(); }
         private void TrayDetach_Click(object sender, RoutedEventArgs e) => Overlay?.Detach();
         private void TraySettings_Click(object sender, RoutedEventArgs e) => Main?.OpenSettings();
-        private void TrayExit_Click(object sender, RoutedEventArgs e)
+             private void TrayExit_Click(object sender, RoutedEventArgs e)
         {
-            MainWindow.AppIsExiting = true;
+            global::InterviewOverlay.MainWindow.AppIsExiting = true;
             ShutdownApp();
         }
     }
