@@ -8,10 +8,6 @@
     <AssemblyName>InterviewOverlay</AssemblyName>
     <RootNamespace>InterviewOverlay</RootNamespace>
     <Platforms>x64</Platforms>
-    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <Version>1.0.0</Version>
   </PropertyGroup>
 
