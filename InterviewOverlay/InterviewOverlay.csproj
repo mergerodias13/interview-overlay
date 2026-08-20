@@ -8,10 +8,15 @@
     <AssemblyName>InterviewOverlay</AssemblyName>
     <RootNamespace>InterviewOverlay</RootNamespace>
     <Version>1.0.0</Version>
+    <StartupObject>InterviewOverlay.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- System tray support -->
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
