@@ -1,0 +1,33 @@
+<Application x:Class="InterviewOverlay.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tb="clr-namespace:Hardcodet.Wpf.TaskbarNotification;assembly=Hardcodet.NotifyIcon.Wpf"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <SolidColorBrush x:Key="AccentBrush" Color="#4C8BF5"/>
+            <SolidColorBrush x:Key="DarkBg" Color="#1E1F24"/>
+            <SolidColorBrush x:Key="DarkPanel" Color="#2A2B32"/>
+            <SolidColorBrush x:Key="DarkText" Color="#F0F0F0"/>
+
+            <tb:TaskbarIcon x:Key="AppTrayIcon"
+                             ToolTipText="Interview Overlay"
+                             MenuActivation="LeftOrRightClick">
+                <tb:TaskbarIcon.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Show Overlay" Click="TrayShowOverlay_Click"/>
+                        <MenuItem Header="Hide Overlay" Click="TrayHideOverlay_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Open Notes" Click="TrayOpenNotes_Click"/>
+                        <MenuItem Header="Attach to Window..." Click="TrayAttach_Click"/>
+                        <MenuItem Header="Detach" Click="TrayDetach_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Settings..." Click="TraySettings_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Exit" Click="TrayExit_Click"/>
+                    </ContextMenu>
+                </tb:TaskbarIcon.ContextMenu>
+            </tb:TaskbarIcon>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

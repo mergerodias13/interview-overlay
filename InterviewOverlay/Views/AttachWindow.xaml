@@ -1,0 +1,38 @@
+<Window x:Class="InterviewOverlay.Views.AttachWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Attach to Window" Height="480" Width="460"
+        Background="#17181C" WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Select a window to attach your notes to" Foreground="White"
+                   FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+        <ListBox Name="WindowList" Grid.Row="1" Background="#1E1F24" Foreground="White" BorderThickness="0"/>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+            <TextBlock Text="Overlay position:" Foreground="#AAA" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox Name="PositionCombo" Width="160" SelectedIndex="1">
+                <ComboBoxItem Content="TopLeft"/>
+                <ComboBoxItem Content="TopRight"/>
+                <ComboBoxItem Content="BottomLeft"/>
+                <ComboBoxItem Content="BottomRight"/>
+                <ComboBoxItem Content="Center"/>
+            </ComboBox>
+            <Button Content="Refresh List" Click="Refresh_Click" Margin="10,0,0,0" Padding="8,4"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Cancel" Width="90" Click="Cancel_Click" Padding="6"/>
+            <Button Content="Attach" Width="90" Margin="8,0,0,0" Click="Attach_Click" Padding="6"
+                    Background="#4C8BF5" Foreground="White"/>
+        </StackPanel>
+    </Grid>
+</Window>
