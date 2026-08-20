@@ -256,8 +256,11 @@ namespace InterviewOverlay
 
         private void Hide_Click(object sender, RoutedEventArgs e) => HideOverlay();
 
-        private void Close_Click(object sender, RoutedEventArgs e) => Detach();
-
+       private void Close_Click(object sender, RoutedEventArgs e)
+{
+    Detach();
+    HideOverlay();
+}
         private void LockButton_Click(object sender, RoutedEventArgs e) => SetClickThrough(!IsClickThrough);
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
